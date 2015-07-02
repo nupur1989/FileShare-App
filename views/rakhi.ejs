@@ -1,0 +1,222 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Untitled Document</title>
+<title>AWS SDK for JavaScript - Sample Application</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1.12.min.js"></script>
+</head>
+<h1><center>File Sharing</center></h1>
+<!--<script src = "db-server.js"></script>-->
+<script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script >
+// This works on On CLick event of Get Details for a file
+
+$(document).ready(function () {
+		$('#GetDetails').click(function () {
+        $.ajax({ url: 'fetch', type: 'POST',
+            data: { filename: document.getElementById("nameOfFile").innerHTML,loggedUserName: document.getElementById("loggedUserName").innerHTML },
+			//data: [{ filename: $('#filename').val(), username: $('#username').val()}],
+            error: function (e, textStatus, errorThrown) {
+                console.log('error is: ' + e.responseText, textStatus, '//', errorThrown);
+				console.log('error occurred');
+            },
+            success: function (json) {
+				var jsonData;
+				try{
+					jsonData = JSON.parse(json);
+				} catch(err){
+					console.log("Error parsing json." + err.message);
+					console.log("Error message: " + err.message);	
+				}
+				var sharedUsers = $('#shared_users');
+                var add;
+                add = $('<div class="post"></div>');
+                // SECURITY HOLE: Avoid posting raw HTML from record
+                add.html('<b>FileName: </b> ' + jsonData.post[0].filename + '<br />'
+                    + '<b>File Owner: </b> ' + jsonData.post[0].fileowner + '<br />'
+					+ '<b>Creation Date: </b> ' + jsonData.post[0].creationdate + '<br />'
+					+ '<b>Shared Users: </b> ' + jsonData.post[0].usersSharedWith + '<br />');
+					console.log(add);
+				sharedUsers.append(add);
+            }});
+			return false;
+    });
+	
+});
+
+/**This method will be called on click of Share file. 
+Input Parameters : Filename,Username with whom to be shared, logged In User name
+*/
+$(document).ready(function () {
+    $('#ShareFile').click(function () {
+        $.ajax({ url: 'updateSharedUsers', type: 'POST', 
+           data: { filename:  document.getElementById("filename").innerHTML, username: $('#username').val(), loggedUserName: document.getElementById("loggedUserName").innerHTML},
+            error: function (e, textStatus, errorThrown) {
+				console.log('error is: ' + e.responseText, textStatus, '//', errorThrown);
+				var fileSharingResult = $('#FileSharingResult');
+				add = $('<div class="post"></div>');
+                // SECURITY HOLE: Avoid posting raw HTML from record
+                add.html('<b>Error: </b> ' + e.responseText + '<br />');
+				fileSharingResult.append(add);
+            },
+            success: function (json) {
+				var jsonData;
+				var fileSharingResult = $('#FileSharingResult');
+				try{
+					jsonData = JSON.parse(json);
+				} catch(err){
+					console.log("Error parsing json." + err.message);
+					console.log("Error message: " + err.message);	
+				}
+				add = $('<div class="post"></div>');
+                // SECURITY HOLE: Avoid posting raw HTML from record
+                add.html('<b>Message: </b> ' + jsonData.post[0].message + '<br />');
+				fileSharingResult.append(add);
+				//console.log('data updated' + jsonData.post[0].message);
+            }});
+			
+			return false;
+    });
+	
+});
+/**This method will be called on click of Insert file details in table. 
+Input Parameters : Filename,Username,creationDate, s3link
+*/
+$(document).ready(function () {
+    $('#insert').click(function () {
+        $.ajax({ url: 'insert', type: 'POST', 
+           data: { filename:  $('#nameoffile').val(), loggedUserName: document.getElementById("loggedUserName").innerHTML, creationDate: $('#creationdate').val(), s3link: $('#s3link').val()},
+            error: function (e, textStatus, errorThrown) {
+				console.log('error is: ' + e.responseText, textStatus, '//', errorThrown);
+				var fileSharingResult = $('#FileSharingResult');
+				add = $('<div class="post"></div>');
+                // SECURITY HOLE: Avoid posting raw HTML from record
+                add.html('<b>Error: </b> ' + e.responseText + '<br />');
+				fileSharingResult.append(add);
+            },
+            success: function (json) {
+				var jsonData;
+				var fileSharingResult = $('#FileSharingResult');
+				try{
+					jsonData = JSON.parse(json);
+				} catch(err){
+					console.log("Error parsing json." + err.message);
+					console.log("Error message: " + err.message);	
+				}
+				add = $('<div class="post"></div>');
+                // SECURITY HOLE: Avoid posting raw HTML from record
+                add.html('<b>Message: </b> ' + jsonData.post[0].message + '<br />');
+				fileSharingResult.append(add);
+				//console.log('data updated' + jsonData.post[0].message);
+            }});
+			
+			return false;
+    });
+	
+});
+/**This method will be called on click of Delete file details in table. 
+Input Parameters : Filename,Username
+*/
+$(document).ready(function () {
+    $('#delete').click(function () {
+        $.ajax({ url: 'delete', type: 'POST', 
+           data: { filename:  document.getElementById("filename").innerHTML, loggedUserName: document.getElementById("loggedUserName").innerHTML},
+            error: function (e, textStatus, errorThrown) {
+				console.log('error is: ' + e.responseText, textStatus, '//', errorThrown);
+				var fileSharingResult = $('#FileSharingResult');
+				add = $('<div class="post"></div>');
+                // SECURITY HOLE: Avoid posting raw HTML from record
+                add.html('<b>Error: </b> ' + e.responseText + '<br />');
+				fileSharingResult.append(add);
+            },
+            success: function (json) {
+				var jsonData;
+				var fileSharingResult = $('#FileSharingResult');
+				try{
+					jsonData = JSON.parse(json);
+				} catch(err){
+					console.log("Error parsing json." + err.message);
+					console.log("Error message: " + err.message);	
+				}
+				add = $('<div class="post"></div>');
+                // SECURITY HOLE: Avoid posting raw HTML from record
+                add.html('<b>Message: </b> ' + jsonData.post[0].message + '<br />');
+				fileSharingResult.append(add);
+				//console.log('data updated' + jsonData.post[0].message);
+            }});
+			
+			return false;
+    });
+	
+});
+// This works on On CLick event of Get Link for a file
+$(document).ready(function () {
+    //$('#fileshare').submit(function () {
+		$('#GetLink').click(function () {
+        $.ajax({ url: 'fetchLink', type: 'POST',
+            data: { filename: document.getElementById("nameOfFile").innerHTML,loggedUserName: document.getElementById("loggedUserName").innerHTML },
+            error: function (e, textStatus, errorThrown) {
+                console.log('error is: ' + e.responseText, textStatus, '//', errorThrown);
+				cosole.log('error occurred');
+            },
+            success: function (json) {
+				var jsonData;
+				try{
+					jsonData = JSON.parse(json);
+				} catch(err){
+					console.log("Error parsing json coming from server: " + err.message);
+				}
+				var sharedUsers = $('#shared_users');
+                var add;
+                add = $('<div class="post"></div>');
+                // SECURITY HOLE: Avoid posting raw HTML from record
+                add.html('<b>File Link: </b> ' + jsonData.post[0].fileLink + '<br />');
+					console.log(add);
+				sharedUsers.append(add);
+            }});
+			return false;
+    });
+	
+})</script>
+
+<body>
+<form id = "fileshare">
+<table align="center">
+<label id = "loggedUserName">rakhi</label>
+<br>
+<row>
+  <label id="nameOfFile" for="file1">File1</label>
+  <button type="submit" id = "GetDetails">GetDetails</button>
+  <button type="getLink" id = "GetLink">GetLink</button>
+  <button id = "Download" >Download</button>
+  <button id = "GenerateURL">Generate Unique URL</button>
+ <br> <label>Add the details of file to insert</label>
+  <input id = "nameoffile" placeholder="filename"><br>
+  <input id = "creationdate" placeholder="creationdate"><br>
+  <input id = "s3link" placeholder="s3link"><br>
+  
+  <button id = "insert">Insert</button>
+</row>
+<br><br>
+
+<row>
+	<label>Add the usernames with whom you want to share</label><br>
+    <label id="filename" for="file1">File1</label>
+	<input  id="username" placeholder="username" type="text" name="username" >
+	<button type="submit" id = "ShareFile">Share</button>
+    <button id = "unshare">Unshare</button>
+   
+</row>
+<row>
+	<div id = "FileSharingResult"></div>
+</row>
+
+<row>
+	<div id="shared_users"></div>
+</row>
+</table>
+</form> 
+</body>
+</html>

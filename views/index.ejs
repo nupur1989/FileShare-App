@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <title>CodePen - Flat Login Form 2.0</title>
+
+  <link rel="stylesheet" href="/stylesheets/reset.css">
+
+  <link rel='stylesheet prefetch' href='http://daneden.github.io/animate.css/animate.min.css'>
+<link rel='stylesheet prefetch' href='http://fonts.googleapis.com/css?family=Roboto:400,100,400italic,700italic,700'>
+<link rel='stylesheet prefetch' href='http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css'>
+
+    <link rel="stylesheet" href="/stylesheets/stylenidhi.css">
+
+</head>
+
+<body>
+
+  <div class='info'>
+  <h1>Login Form</h1>
+  <span>
+    Made with
+    <i class='fa fa-heart animated infinite pulse'></i>
+    by
+    <a href='http://andytran.me'>Andy Tran</a>
+    <div class='spoilers'>
+      (Swap Forms!) | (Very Cool!) | ( Alert Popup!)
+    </div>
+  </span>
+</div>
+<div class='form aniamted bounceIn'>
+ 
+  <div class='login'>
+    <h2>Login To Your Account</h2>
+        <% if(typeof message !== 'undefined') { %>
+         	<h2><%= message %></h2>
+        	 <% } %>
+    
+      <form name="login" action="/register" method="post">
+      <input placeholder='Username' type='text' name="username" id="username" />
+      <input placeholder='Firstname' type='text' name="f_name" id="f_name" />
+      <input placeholder='Lastname' type='text' name="l_name" id="l_name" />
+      <input placeholder='Email' type='text' name="email" id="email" />
+      <input placeholder='Password' type='password' name="pwd" name="pwd"/>
+      <input type="submit" value="Submit">
+    </form>
+  </div>
+
+  <footer>
+    <a href='http://andytran.me'>New User</a>
+  </footer>
+</div>
+
+  <script src='http://codepen.io/assets/libs/fullpage/jquery.js'></script>
+
+  <script src="/stylesheets/index.js"></script>
+
+</body>
+
+</html>

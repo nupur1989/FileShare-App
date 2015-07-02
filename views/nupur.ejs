@@ -1,0 +1,385 @@
+<html>
+<head>
+    <title>AWS SDK for JavaScript - Sample Application</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1.12.min.js"></script>
+</head>
+
+<body>
+    <input type="file" id="file-chooser" />
+    <!--button id="upload-button" style="display:none">Upload to S3</button-->
+    <button id="upload-button">Upload to S3</button>
+    <button id="ShareFile">Share to S3</button>
+    <!--button id="display-button">display file info</button-->
+    <!-- <button id="download-button">Download from S3</button>
+    <button id="view-button">View</button>
+    <button id="share-button">Share</button>
+    <button id="delete-button">Delete</button> -->
+    <button id="view-button">View</button>
+    <div id="results"></div>
+    <script type="text/javascript">
+    
+    	AWS.config.accessKeyId = 'your access key';
+        AWS.config.secretAccessKey = 'your secret key';
+        AWS.config.region = 'us-west-2';	
+        console.log(" region correct!");
+        var UserId='Nupur';
+        console.log(UserId);
+
+		var bucketName = 'bucket2nupur';		
+        var bucket = new AWS.S3({
+            params: {
+                Bucket: bucketName
+            }
+        });
+		
+        var fileChooser = document.getElementById('file-chooser');
+        var button = document.getElementById('upload-button');
+        var results = document.getElementById('results');
+
+		var objKey;
+        button.addEventListener('click', function () {
+
+	        console.log("inside Clicked!!");
+            var file = fileChooser.files[0];
+
+            if (file) {
+                results.innerHTML = '';
+                //Object key will be facebook-USERID#/FILE_NAME
+                var objKey = 'gmail-' + UserId + '/' + file.name;
+                var params = {
+                    Key: objKey,
+                    ContentType: file.type,
+                    Body: file,
+                    ACL: 'public-read'
+                };
+
+				bucket.putObject(params, function (err, data) {
+                    if (err) {
+                        console.log("i see credentials error");
+                        results.innerHTML = 'ERROR: ' + err;
+                    } else {
+                        displayInfo(objKey);
+                        
+                        results.innerHTML = 'uploads successful ';
+                    }
+                });
+            } else {
+                results.innerHTML = 'Nothing to upload.';
+            }
+        }, false);
+		
+		 function listObjs() {
+            var prefix = 'gmail-' + UserId;
+            bucket.listObjects({
+                Prefix: prefix
+            }, function (err, data) {
+                if (err) {
+                    results.innerHTML = 'ERROR: ' + err;
+                } else {
+                    var objKeys = "";
+                    data.Contents.forEach(function (obj) {
+                        //objKeys += obj.Key + "<br>";
+                    //});
+                    //results.innerHTML += obj.Key + '<button id= "download-button" name="'+obj.Key+'" onclick= "downloadFile(\''+ obj.Key+'\')">Download</button>' + '\t' +'<button id= "delete-button" name="btn" onclick= "deleteFile(\''+ obj.Key+'\')">Delete</button>' + '\t' +'<button id= "view-button" name="btn" onclick= "viewFile(\''+ obj.Key+'\')">View</button>' + "<br>" ;
+                    results.innerHTML += obj.Key + '<button id= "download-button" name="'+obj.Key+'" onclick= "downloadFile(\''+ obj.Key+'\')">Download</button>' + '\t' +'<button id= "delete-button" name="btn" onclick= "deleteFile(\''+ obj.Key+'\')">Delete</button>' + '\t' +'<button id= "view-button" name="btn" onclick= "viewFile(\''+ obj.Key+'\')">View</button>' + '<select onchange="report(this.value,\''+ obj.Key+'\')"><option id = "shareFile "value="Share">Share</option><option value="Unshare">Unshare</option><option value="Get details">Get details</option><option value="Get Link">Get Link</option></select>' + "<br>" ;
+                    
+                    });
+                }
+            });
+        }       
+         function viewFile(url)
+        {
+            var params = {Bucket: bucketName, Key: url};
+		    var url = bucket.getSignedUrl('getObject', params);
+        	window.open(url);
+        }
+        
+        function report(value,objectKey)
+        {
+			console.log(objectKey);
+			var loggedUser = objectKey.slice(0, objectKey.indexOf('/'));
+            var filename = objectKey.slice(objectKey.indexOf('/')+1); 
+			
+        	if (value == "Share")
+        	{
+        	   alert("share"); // call ur functions
+        	   
+        	   var name = prompt("add the user name with whom u want to share", "value");
+        	   if (name == "")
+        	   alert("Add the username");
+        	   else	   
+        	   {
+        		var newUser = name;
+        		console.log(loggedUser,filename,newUser);
+   		
+        		share(loggedUser,filename,newUser);
+        		}
+            }
+            
+            
+        	if (value =="Unshare")
+        		alert("Unshare");
+        		
+        		
+        	if (value =="Get details")
+        	{
+        		alert("Get details");
+        		getDetails(loggedUser,filename);
+        	}
+        	
+        	
+        	if (value =="Get Link")
+        	{
+        		alert("Get Link");
+        		getLink(loggedUser,filename);
+        	}
+        }
+       
+        function getLink(loggedUser,filename)
+        {
+            $.ajax({ url: 'fetchLink', type: 'POST',
+            data: { filename: filename,loggedUserName: loggedUser },
+            error: function (e, textStatus, errorThrown) {
+                console.log('error is: ' + e.responseText, textStatus, '//', errorThrown);
+				console.log('error occurred');
+            },
+            success: function (json) {
+				var jsonData;
+				try{
+					jsonData = JSON.parse(json);
+				} catch(err){
+					console.log("Error parsing json coming from server: " + err.message);
+				}
+				var sharedUsers = $('#shared_users');
+                var add;
+                add = $('<div class="post"></div>');
+                // SECURITY HOLE: Avoid posting raw HTML from record
+                add.html('<b>File Link: </b> ' + jsonData.post[0].fileLink + '<br />');
+					console.log(add);
+				sharedUsers.append(add);
+				alert("Save the link:" + "" + jsonData.post[0].fileLink );
+            }});
+			return false;
+        }
+     
+        function getDetails(loggedUser,filename)
+        {
+            $.ajax({ url: 'fetch', type: 'POST',
+            data: { filename: filename ,loggedUserName:loggedUser  },
+			//data: [{ filename: $('#filename').val(), username: $('#username').val()}],
+            error: function (e, textStatus, errorThrown) {
+                console.log('error is: ' + e.responseText, textStatus, '//', errorThrown);
+				console.log('error occurred');
+            },
+            success: function (json) {
+				var jsonData;
+				try{
+					jsonData = JSON.parse(json);
+				} catch(err){
+					console.log("Error parsing json." + err.message);
+					console.log("Error message: " + err.message);	
+				}
+				var sharedUsers = $('#shared_users');
+                var add;
+                add = $('<div class="post"></div>');
+                // SECURITY HOLE: Avoid posting raw HTML from record
+                add.html('<b>FileName: </b> ' + jsonData.post[0].filename + '<br />'
+                    + '<b>File Owner: </b> ' + jsonData.post[0].fileowner + '<br />'
+					+ '<b>Creation Date: </b> ' + jsonData.post[0].creationdate + '<br />'
+					+ '<b>Shared Users: </b> ' + jsonData.post[0].usersSharedWith + '<br />');
+					console.log(add);
+				sharedUsers.append(add);
+				alert("File details:" + " " + jsonData.post[0].filename);
+            }});
+			return false;   
+        }
+        
+        function share(loggedUser,filename,newUser)
+        {
+               $.ajax({ url: 'updateSharedUsers', type: 'POST', 
+           // data: { filename:  document.getElementById("filename").innerHTML, username: $('#username').val(), loggedUserName: document.getElementById("loggedUserName").innerHTML},
+            data: { filename:filename , username:newUser , loggedUserName:loggedUser},
+            error: function (e, textStatus, errorThrown) {
+				console.log('error is: ' + e.responseText, textStatus, '//', errorThrown);
+				var fileSharingResult = $('#FileSharingResult');
+				add = $('<div class="post"></div>');
+                // SECURITY HOLE: Avoid posting raw HTML from record
+                add.html('<b>Error: </b> ' + e.responseText + '<br />');
+				fileSharingResult.append(add);
+            },
+            success: function (json) {
+				var jsonData;
+				var fileSharingResult = $('#FileSharingResult');
+				try{
+					jsonData = JSON.parse(json);
+				} catch(err){
+					console.log("Error parsing json." + err.message);
+					console.log("Error message: " + err.message);	
+				}
+				add = $('<div class="post"></div>');
+                // SECURITY HOLE: Avoid posting raw HTML from record
+                add.html('<b>Message: </b> ' + jsonData.post[0].message + '<br />');
+				fileSharingResult.append(add);
+				//console.log('data updated' + jsonData.post[0].message);
+            }});
+			
+			return false;
+            
+        }
+        
+        /**This method will be called on click of Insert file details in table. 
+          Input Parameters : Filename,Username,creationDate, s3link
+        */
+        function insertToFile(date,userd ,filename,url)
+        {
+	         $.ajax({ url: 'insert', type: 'POST', 
+	           data: { filename:  filename, loggedUserName: userd, creationDate: date, s3link: url},
+	            error: function (e, textStatus, errorThrown) {
+					console.log('error is: ' + e.responseText, textStatus, '//', errorThrown);
+					var fileSharingResult = $('#FileSharingResult');
+					add = $('<div class="post"></div>');
+	                // SECURITY HOLE: Avoid posting raw HTML from record
+	                add.html('<b>Error: </b> ' + e.responseText + '<br />');
+					fileSharingResult.append(add);
+	            },
+	                success: function (json) {
+					var jsonData;
+					var fileSharingResult = $('#FileSharingResult');
+					try{
+						jsonData = JSON.parse(json);
+					} catch(err){
+						console.log("Error parsing json." + err.message);
+						console.log("Error message: " + err.message);	
+					}
+					add = $('<div class="post"></div>');
+	                // SECURITY HOLE: Avoid posting raw HTML from record
+	                add.html('<b>Message: </b> ' + jsonData.post[0].message + '<br />');
+					fileSharingResult.append(add);
+					//console.log('data updated' + jsonData.post[0].message);
+	            }});
+				
+				return false;
+     
+        }
+               
+        function deleteFromDB(userId,fileName)
+        {
+        alert("enter deleteDB");
+        console.log(userId);
+        	 $.ajax({ url: 'delete', type: 'POST', 
+            data: { filename: fileName, loggedUserName: userId},
+            error: function (e, textStatus, errorThrown) {
+				console.log('error is: ' + e.responseText, textStatus, '//', errorThrown);
+				var fileSharingResult = $('#FileSharingResult');
+				add = $('<div class="post"></div>');
+                // SECURITY HOLE: Avoid posting raw HTML from record
+                add.html('<b>Error: </b> ' + e.responseText + '<br />');
+				fileSharingResult.append(add);
+            },
+            success: function (json) {
+				var jsonData;
+				var fileSharingResult = $('#FileSharingResult');
+				try{
+					jsonData = JSON.parse(json);
+				} catch(err){
+					console.log("Error parsing json." + err.message);
+					console.log("Error message: " + err.message);	
+				}
+				add = $('<div class="post"></div>');
+                // SECURITY HOLE: Avoid posting raw HTML from record
+                add.html('<b>Message: </b> ' + jsonData.post[0].message + '<br />');
+				fileSharingResult.append(add);
+				//console.log('data updated' + jsonData.post[0].message);
+            }});
+			
+			return false;
+        
+        }       
+        function deleteFile(objectKey)
+        {
+
+        	alert("delete done");
+			var params = {  Bucket:bucketName, Key: objectKey };
+			bucket.deleteObject(params, function(err, data) {
+			  if (err)
+			   console.log(err, err.stack);   // error
+			  else    
+			  { 
+			     console.log();
+			     var userId = objectKey.slice(0, objectKey.indexOf('/')); ;
+                 var fileName= objectKey.slice(objectKey.indexOf('/')+1); 
+			     deleteFromDB(userId,fileName);  
+			  } // deleted
+	    
+	    	});
+        }
+        
+        function downloadFile(objectKey){
+		alert("download ready");
+		//var s3 = new AWS.S3();	
+		//var params = {Bucket: 'bucket2nupur', Key: 'gmail-Nupur/'+ file.name};
+		//var params = {Bucket: bucketName, Key: 'gmail-Nupur/roohi.jpg'};\
+		var params = {Bucket: bucketName, Key: objectKey};
+		var url = bucket.getSignedUrl('getObject', params);
+		console.log('The URL is', url);
+
+		if (!window.ActiveXObject) {
+		        var save = document.createElement('a');
+		        save.href = url;
+		        save.target = '_blank';
+		        save.download = "fileName" || 'unknown';
+
+		        var event = document.createEvent('Event');
+		        event.initEvent('click', true, true);
+		        save.dispatchEvent(event);
+		        (window.URL || window.webkitURL).revokeObjectURL(save.href);
+		    }
+
+		//alert(url);
+		//results.innerHTML = 'url is' + url;
+
+		}   
+		
+		function displayInfo(objectKey)
+		{
+			  var params = {
+			  Bucket: bucketName, /* required */
+			  Key:objectKey, /* required */
+			
+		};
+
+			  bucket.headObject(params, function(err, data) {
+			  if (err) 
+			  { 
+			  		console.log(err, err.stack);
+			  } // an error occurred
+			  else 
+			  {    
+			  	console.log(data); 
+			  	var date = data.LastModified ;		  	
+			  	
+			  }          // successful response
+               
+              var userd = objectKey.slice(0, objectKey.indexOf('/')); ;
+              var filename= objectKey.slice(objectKey.indexOf('/')+1); 
+              var params = {Bucket: bucketName, Key: objectKey};
+		      var url = bucket.getSignedUrl('getObject', params);
+		      console.log(objectKey,date,userd ,filename,url);
+		      insertToFile(date,userd ,filename,url); // inserts data to database
+		      
+       });
+
+		}		
+	$(document).ready(function() {
+
+    	$("#view-button").click(function(){
+    		alert("heklo");
+    		listObjs();
+    	});
+    });	  	
+		 </script>
+<p> hello User</p>
+</body>
+</html>
+		
